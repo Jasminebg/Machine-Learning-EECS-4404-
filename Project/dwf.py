@@ -1,5 +1,9 @@
 import numpy as np
-
+import time
+import scipy
+from scipy.sparse import linalg as splinalg
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+import tracemalloc
 #all unique words and list of docs in corpus
 def Unique(filename):
     #enwiki8 doc
@@ -34,32 +38,25 @@ def Top10k(terms):
                     top10k[word2] = uniquecount[word2]           
                 
     #assigning row to each word in the top 10k words
-    return top10k, {k:v for v,k in enumerate(list(top10k.keys()))}, humanscores
-    #print(wordrows)
-#DocWordFreq matrix
-def dwf(docs, top10k, wordrows):
-    docwordfreq = np.zeros((len(top10k),len(docs)))
-    for docnum in range(len(docs)):
-        doc = {}
-        for word in docs[docnum].strip().split():
-            if word in top10k:
-                if word in doc:
-                    doc[word]+=1
-                else:
-                    doc[word] = 1
-        for word in doc.keys():
-            docwordfreq[wordrows[word]][docnum] = doc[word]
-    docwordfreq = np.asarray(docwordfreq)
-    return docwordfreq
+    #return top10k, {k:v for v,k in enumerate(list(top10k.keys()))}, humanscores
+    return top10k, humanscores
 
 
 print("Part 1 started... ")
 uniquecount,docs = Unique("enwiki8.txt")
 print("Unique count of all terms obtained")
-top10k, wordrows, humansc = Top10k(uniquecount)
+top10k, humansc = Top10k(uniquecount)
 print("Top 10,000 terms and row# for all words obtained")
-docwords = dwf(docs, top10k, wordrows)
+cv = CountVectorizer(vocabulary = top10k.keys())
+tf = TfidfTransformer()
+#cv.vocabulary
+cv.fit_transform(top10k)
+docwords = cv.fit_transform(docs)
+dwf = (tf.fit_transform(docwords)).toarray()
+#print(cv.vocabulary_)
 print("Documemt Word Frequency Matrix obtained, shape of matrix: ")
-print(docwords.shape)
+dwf = dwf.T
+print(dwf.shape)
+del (uniquecount,docs,docwords)
 #Uses ~8gb RAM
 print("Part 1 completed")
